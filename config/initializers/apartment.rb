@@ -7,8 +7,8 @@
 require 'apartment/elevators/subdomain'
 # require 'apartment/elevators/first_subdomain'
 # require 'apartment/elevators/host'
+require 'rescued_apartment_middleware'
 
-#
 # Apartment Configuration
 #
 Apartment.configure do |config|
@@ -16,7 +16,7 @@ Apartment.configure do |config|
   # Add any models that you do not want to be multi-tenanted, but remain in the global (public) namespace.
   # A typical example would be a Customer or Tenant model that stores each Tenant's information.
   #
-  # config.excluded_models = %w{ Tenant }
+  config.excluded_models = %w{ User }
 
   # In order to migrate all of your Tenants you need to provide a list of Tenant names to Apartment.
   # You can make this dynamic by providing a Proc object to be called on migrations.
@@ -47,8 +47,10 @@ Apartment.configure do |config|
   #     hash[tenant.name] = tenant.db_configuration
   #   end
   # end
-  config.excluded_models = %w{ User }
   config.tenant_names = lambda { User.pluck :subdomain }
+  # Rails.application.config.middleware.use Apartment::Elevators::Generic, lambda { |request|
+  #   request.session[:tenant] ? request.session[:tenant] : 'public'
+  # }
   
   # PostgreSQL:
   #   Specifies whether to use PostgreSQL schemas or create a new database per Tenant.
@@ -58,7 +60,7 @@ Apartment.configure do |config|
   #
   # The default behaviour is true.
   #
-  # config.use_schemas = true
+  config.use_schemas = true
 
   #
   # ==> PostgreSQL only options
@@ -68,14 +70,14 @@ Apartment.configure do |config|
   # schema.rb, like materialized views etc. (only applies with use_schemas set to true).
   # (Note: this option doesn't use db/structure.sql, it creates SQL dump by executing pg_dump)
   #
-  # config.use_sql = false
+  # config.use_sql = true
 
   # There are cases where you might want some schemas to always be in your search_path
   # e.g when using a PostgreSQL extension like hstore.
   # Any schemas added here will be available along with your selected Tenant.
   #
-  # config.persistent_schemas = %w{ hstore }
-
+  # config.persistent_schemas = %w{ shared_extensions }
+ 
   # <== PostgreSQL only options
   #
 
@@ -105,5 +107,7 @@ end
 
 # Rails.application.config.middleware.use Apartment::Elevators::Domain
 Rails.application.config.middleware.use Apartment::Elevators::Subdomain
+Apartment::Elevators::Subdomain.excluded_subdomains = ['www']
+Apartment::Elevators::Subdomain.prepend RescuedApartmentMiddleware
 # Rails.application.config.middleware.use Apartment::Elevators::FirstSubdomain
 # Rails.application.config.middleware.use Apartment::Elevators::Host

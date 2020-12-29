@@ -26,7 +26,7 @@ class UsersController < ApplicationController
   # POST /users.json
   def create
     @user = User.new(user_params)
-
+    # redirect_subdomain  
     respond_to do |format|
       if @user.save
         format.html { redirect_to @user, notice: 'User was successfully created.' }
@@ -80,6 +80,9 @@ class UsersController < ApplicationController
 
     # def delete_tenant
     #   Apartment::Tenant.drop(params[:user][:subdomain])
+    # end
+    # def redirect_subdomain
+    #   Apartment::Tenant.switch!(subdomain)
     # end
 
 end
